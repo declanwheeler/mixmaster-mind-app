@@ -55,9 +55,7 @@ function App() {
 
 
   // State for Firebase (for potential future expansion with user authentication/storage)
-  const [firebaseApp, setFirebaseApp] = useState(null);
-  const [auth, setAuth] = useState(null);
-  const [userId, setUserId] = useState(null); 
+ 
 
   // Initialize Firebase and handle authentication
   useEffect(() => {
