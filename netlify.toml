@@ -1,0 +1,19 @@
+# netlify.toml
+[build]
+  command = "CI= false npm run build" # Tell Netlify to be less strict during build
+  publish = "build"
+
+[functions]
+  directory = "netlify/functions" # This tells Netlify where your serverless functions are
+  node_bundler = "esbuild"       # Ensure Netlify uses esbuild for bundling functions
+  # Explicitly list external modules for the function to ensure they are bundled
+  external_node_modules = [
+    "firebase",
+    "@google/generative-ai",
+    "node-fetch"
+  ]
+
+[build.environment]
+  # Specify a Node.js version for Netlify's build environment
+  NODE_VERSION = "18" 
+  
