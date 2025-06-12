@@ -70,8 +70,6 @@ function App() {
         const firebaseConfig = JSON.parse(rawFirebaseConfig);
         app = initializeApp(firebaseConfig);
         authInstance = getAuth(app);
-        setFirebaseApp(app);
-        setAuth(authInstance);
 
         const authenticate = async () => {
           try {
@@ -85,19 +83,16 @@ function App() {
             setUserId(authInstance.currentUser?.uid || crypto.randomUUID()); 
           } catch (e) {
             console.error("Firebase authentication error:", e);
-            setError("Authentication failed. Some features may be limited. Check console for details.");
-            setUserId(crypto.randomUUID()); 
+            setError("Authentication failed. Some features may be limited. Check console for details."); 
           }
         };
         authenticate();
       } else {
-        console.warn("Firebase config not found. Running without Firebase authentication. This is expected outside the Canvas environment unless explicitly configured.");
-        setUserId(crypto.randomUUID()); 
+        console.warn("Firebase config not found. Running without Firebase authentication. This is expected outside the Canvas environment unless explicitly configured."); 
       }
     } catch (e) {
       console.error("Failed to initialize Firebase or parse config:", e);
-      setError("Failed to initialize the application fully. Check console for details.");
-      setUserId(crypto.randomUUID()); 
+      setError("Failed to initialize the application fully. Check console for details."); 
     }
   }, []); 
 
