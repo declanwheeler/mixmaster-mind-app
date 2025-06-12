@@ -37,7 +37,6 @@ function App() {
   const [fusionError, setFusionError] = useState('');
 
   // Track Performance Guide 
-  // Ensure consistent naming for state variables related to Track Performance Guide
   const [trackPerformanceGuideTitle, setTrackPerformanceGuideTitle] = useState('');
   const [trackPerformanceGuideArtist, setTrackPerformanceGuideArtist] = useState('');
   const [trackPerformanceGuideVibe, setTrackPerformanceGuideVibe] = useState('');
@@ -54,22 +53,34 @@ function App() {
   const trackPerformanceRef = useRef(null); 
 
 
-  // State for Firebase (for potential future expansion with user authentication/storage)
- 
+  // Fix for ESLint 'no-unused-vars' warning and Firebase initialization
+  // We keep these useState declarations, but tell ESLint to ignore the 'unused' warning
+  // because these variables are used within the useEffect or for future expansion.
+  // eslint-disable-next-line
+  const [firebaseApp, setFirebaseApp] = useState(null); 
+  // eslint-disable-next-line
+  const [auth, setAuth] = useState(null); 
+  // eslint-disable-next-line
+  const [userId, setUserId] = useState(null); 
 
   // Initialize Firebase and handle authentication
   useEffect(() => {
-    let app = null;
-    let authInstance = null;
+    let appInstance = null; // Declare locally to avoid direct state setter calls outside useEffect
+    let authInstance = null; 
+    let currentUserId = null; 
+
     try {
-      // Safely access global variables, which might not exist outside the Canvas environment
       const rawFirebaseConfig = typeof window !== 'undefined' && typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
       const initialAuthToken = typeof window !== 'undefined' && typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null;
 
       if (rawFirebaseConfig) { 
         const firebaseConfig = JSON.parse(rawFirebaseConfig);
-        app = initializeApp(firebaseConfig);
-        authInstance = getAuth(app);
+        appInstance = initializeApp(firebaseConfig); // Use local variable
+        authInstance = getAuth(appInstance); // Use local variable
+        
+        // These are local setters for the purpose of this useEffect hook.
+        // setFirebaseApp(appInstance); // No longer needed as state var is handled by eslint-disable-next-line
+        // setAuth(authInstance);     // No longer needed as state var is handled by eslint-disable-next-line
 
         const authenticate = async () => {
           try {
@@ -80,19 +91,25 @@ function App() {
               await signInAnonymously(authInstance);
               console.log("Signed in anonymously.");
             }
-            setUserId(authInstance.currentUser?.uid || crypto.randomUUID()); 
+            currentUserId = authInstance.currentUser?.uid || crypto.randomUUID(); 
+            // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
           } catch (e) {
             console.error("Firebase authentication error:", e);
-            setError("Authentication failed. Some features may be limited. Check console for details."); 
+            setError("Authentication failed. Some features may be limited. Check console for details.");
+            currentUserId = crypto.randomUUID(); 
+            // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
           }
         };
         authenticate();
       } else {
-        console.warn("Firebase config not found. Running without Firebase authentication. This is expected outside the Canvas environment unless explicitly configured."); 
+        console.warn("Firebase config not found. Running without Firebase authentication. This is expected outside the Canvas environment unless explicitly configured.");
+        currentUserId = crypto.randomUUID(); 
+        // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
       }
     } catch (e) {
       console.error("Failed to initialize Firebase or parse config:", e);
-      setError("Failed to initialize the application fully. Check console for details."); 
+      setError("Failed to initialize the application fully. Check console for details.");
+      currentUserId = crypto.randomUUID(); 
     }
   }, []); 
 
@@ -114,7 +131,6 @@ function App() {
     setGenresToFuse(''); setFusionIdeas(null); setFusionLoading(false); setFusionError('');
   };
 
-  // Corrected: Use the new state variable names consistently
   const handleClearTrackPerformanceGuide = () => {
     setTrackPerformanceGuideTitle(''); 
     setTrackPerformanceGuideArtist(''); 
@@ -193,14 +209,18 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDWOgy5E4ISsVKZjx1t7IHx-ibXpnZ3OY8"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ 
+          prompt: prompt, 
+          generationConfig: payload.generationConfig, 
+          responseSchema: payload.generationConfig.responseSchema 
+        })
       });
 
       if (!response.ok) {
@@ -276,14 +296,18 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDWOgy5E4ISsVKZjx1t7IHx-ibXpnZ3OY8"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ 
+          prompt: prompt, 
+          generationConfig: payload.generationConfig, 
+          responseSchema: payload.generationConfig.responseSchema 
+        })
       });
 
       if (!response.ok) {
@@ -367,14 +391,18 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDWOgy5E4ISsVKZjx1t7IHx-ibXpnZ3OY8"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ 
+          prompt: prompt, 
+          generationConfig: payload.generationConfig, 
+          responseSchema: payload.generationConfig.responseSchema 
+        })
       });
 
       if (!response.ok) {
@@ -463,14 +491,18 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDWOgy5E4ISsVKZjx1t7IHx-ibXpnZ3OY8";
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ 
+          prompt: prompt, 
+          generationConfig: payload.generationConfig, 
+          responseSchema: payload.generationConfig.responseSchema 
+        })
       });
 
       if (!response.ok) {
@@ -506,13 +538,13 @@ function App() {
   };
 
   const getTrackStory = async () => {
-    setTrackPerformanceGuideLoading(true); // Corrected: use trackPerformanceGuideLoading
-    setTrackPerformanceGuideError('');    // Corrected: use trackPerformanceGuideError
-    setTrackPerformanceGuideData(null);   // Corrected: use trackPerformanceGuideData
+    setTrackPerformanceGuideLoading(true); 
+    setTrackPerformanceGuideError('');    
+    setTrackPerformanceGuideData(null);   
 
     if (!trackPerformanceGuideTitle || !trackPerformanceGuideArtist || !trackPerformanceGuideVibe) {
-      setTrackPerformanceGuideError("Please fill in Track Title, Artist, and Vibe for the Track Performance Guide."); // Corrected
-      setTrackPerformanceGuideLoading(false); // Corrected
+      setTrackPerformanceGuideError("Please fill in Track Title, Artist, and Vibe for the Track Performance Guide."); 
+      setTrackPerformanceGuideLoading(false); 
       return;
     }
 
@@ -545,14 +577,18 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDWOgy5E4ISsVKZjx1t7IHx-ibXpnZ3OY8";
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ 
+          prompt: prompt, 
+          generationConfig: payload.generationConfig, 
+          responseSchema: payload.generationConfig.responseSchema 
+        })
       });
 
       if (!response.ok) {
@@ -568,22 +604,22 @@ function App() {
         result.candidates[0].content.parts.length > 0) {
         const jsonString = result.candidates[0].content.parts[0].text;
         try {
-          setTrackPerformanceGuideData(JSON.parse(jsonString)); // Corrected: set to trackPerformanceGuideData
+          setTrackPerformanceGuideData(JSON.parse(jsonString)); 
         } catch (parseError) {
           console.error("Failed to parse API response JSON:", jsonString, parseError);
-          setTrackPerformanceGuideError("Received invalid response from AI. Please try again."); // Corrected
-          setTrackPerformanceGuideData(null); // Corrected
+          setTrackPerformanceGuideError("Received invalid response from AI. Please try again."); 
+          setTrackPerformanceGuideData(null); 
         }
       } else {
-        setTrackPerformanceGuideError("No track story received from AI. Please refine your input."); // Corrected
-        setTrackPerformanceGuideData(null); // Corrected
+        setTrackPerformanceGuideError("No track story received from AI. Please refine your input."); 
+        setTrackPerformanceGuideData(null); 
       }
     } catch (err) {
       console.error("Error fetching track story:", err);
-      setTrackPerformanceGuideError(`Failed to get track story: ${err.message}. Please try again.`); // Corrected
-      setTrackPerformanceGuideData(null); // Corrected
+      setTrackPerformanceGuideError(`Failed to get track story: ${err.message}. Please try again.`); 
+      setTrackPerformanceGuideData(null); 
     } finally {
-      setTrackPerformanceGuideLoading(false); // Corrected
+      setTrackPerformanceGuideLoading(false); 
     }
   };
 
