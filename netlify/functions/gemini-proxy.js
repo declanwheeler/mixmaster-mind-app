@@ -1,12 +1,11 @@
 // netlify/functions/gemini-proxy.js
 
-// These modules must be installed as dependencies in your package.json
-// (we'll ensure this in step 7 if you haven't already).
+// These modules are expected to be in your project's package.json dependencies
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = require('node-fetch'); 
+const fetch = require('node-fetch'); // Required for older Node.js versions, safe to keep.
 
 exports.handler = async (event, context) => {
-    // Only allow POST requests to this function
+    // Ensure only POST requests are processed
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -16,42 +15,41 @@ exports.handler = async (event, context) => {
 
     let requestBody;
     try {
-        // Parse the incoming request body from the client (App.js)
+        // Safely parse the JSON payload sent from the client (App.js)
         requestBody = JSON.parse(event.body);
     } catch (e) {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: 'Invalid JSON body in function request' }),
+            body: JSON.stringify({ error: 'Invalid JSON body received by function' }),
         };
     }
 
-    // Extract the 'contents' and 'generationConfig' from the request body
-    // These directly match what the Google Generative AI library expects
+    // Extract the 'contents' array and 'generationConfig' object from the request body.
+    // These are the top-level keys that App.js should be sending.
     const { contents, generationConfig } = requestBody; 
 
-    // Retrieve API key securely from Netlify Environment Variables
-    // This 'process.env.GEMINI_API_KEY' points to the variable you set in Netlify dashboard
+    // Retrieve your actual Gemini API key from Netlify's secure environment variables.
     const API_KEY = process.env.GEMINI_API_KEY; 
     if (!API_KEY) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Server configuration error: GEMINI_API_KEY is not set in Netlify environment variables.' }),
+            body: JSON.stringify({ error: 'Server configuration error: GEMINI_API_KEY is not set.' }),
         };
     }
 
-    // Initialize the Google Generative AI model with the API key
+    // Initialize the Gemini API client
     const genAI = new GoogleGenerativeAI(API_KEY);
 
-    // Configure the model using the generationConfig received from the client
+    // Get the generative model with the configuration passed from the client
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash", // Using gemini-2.0-flash as specified in previous steps
-        generationConfig: generationConfig, // Pass the entire generationConfig object
+        model: "gemini-2.0-flash", // Ensure this matches the model used in your App.js
+        generationConfig: generationConfig, // Pass the full generationConfig object
     });
 
     try {
-        // Make the call to the Google Gemini API with the 'contents' array
+        // Make the actual call to the Gemini API using the extracted 'contents'
         const result = await model.generateContent(contents); 
-        const responseText = result.response.text(); // Get the raw text response from Gemini (which should be JSON)
+        const responseText = result.response.text(); // Get the raw text response from Gemini
 
         // Return Gemini's response back to the client (App.js)
         return {
@@ -60,7 +58,7 @@ exports.handler = async (event, context) => {
             body: responseText, 
         };
     } catch (e) {
-        console.error('Gemini API Error caught in Netlify Function:', e.message);
+        console.error('Error calling Gemini API from Netlify Function:', e.message);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Failed to get response from Gemini API via function.', details: e.message }),

@@ -28,6 +28,7 @@ function App() {
   const [eventDescription, setEventDescription] = useState('');
   const [setlistBlueprint, setSetlistBlueprint] = useState(null); 
   const [setlistLoading, setSetlistLoading] = useState(false);
+  // Corrected: Typo in useState declaration was causing "Expected ] but found ;" error
   const [setlistError, setSetlistError] = useState(''); 
 
   // State variables for Genre Fusion Suggestor
@@ -53,9 +54,9 @@ function App() {
   const trackPerformanceRef = useRef(null); 
 
 
-  // Fix for ESLint 'no-unused-vars' warning and Firebase initialization
-  // We keep these useState declarations, but tell ESLint to ignore the 'unused' warning
-  // because these variables are used within the useEffect or for future expansion.
+  // State for Firebase (for potential future expansion with user authentication/storage)
+  // We keep these useState declarations but disable eslint for unused vars here,
+  // as they are part of the useEffect logic for Canvas compatibility/future use.
   // eslint-disable-next-line
   const [firebaseApp, setFirebaseApp] = useState(null); 
   // eslint-disable-next-line
@@ -65,7 +66,7 @@ function App() {
 
   // Initialize Firebase and handle authentication
   useEffect(() => {
-    let appInstance = null; // Declare locally to avoid direct state setter calls outside useEffect
+    let appInstance = null; 
     let authInstance = null; 
     let currentUserId = null; 
 
@@ -75,13 +76,9 @@ function App() {
 
       if (rawFirebaseConfig) { 
         const firebaseConfig = JSON.parse(rawFirebaseConfig);
-        appInstance = initializeApp(firebaseConfig); // Use local variable
-        authInstance = getAuth(appInstance); // Use local variable
+        appInstance = initializeApp(firebaseConfig); 
+        authInstance = getAuth(appInstance); 
         
-        // These are local setters for the purpose of this useEffect hook.
-        // setFirebaseApp(appInstance); // No longer needed as state var is handled by eslint-disable-next-line
-        // setAuth(authInstance);     // No longer needed as state var is handled by eslint-disable-next-line
-
         const authenticate = async () => {
           try {
             if (initialAuthToken) {
@@ -92,19 +89,16 @@ function App() {
               console.log("Signed in anonymously.");
             }
             currentUserId = authInstance.currentUser?.uid || crypto.randomUUID(); 
-            // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
           } catch (e) {
             console.error("Firebase authentication error:", e);
             setError("Authentication failed. Some features may be limited. Check console for details.");
             currentUserId = crypto.randomUUID(); 
-            // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
           }
         };
         authenticate();
       } else {
         console.warn("Firebase config not found. Running without Firebase authentication. This is expected outside the Canvas environment unless explicitly configured.");
         currentUserId = crypto.randomUUID(); 
-        // setUserId(currentUserId); // No longer needed as state var is handled by eslint-disable-next-line
       }
     } catch (e) {
       console.error("Failed to initialize Firebase or parse config:", e);
@@ -209,17 +203,16 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt, 
-          generationConfig: payload.generationConfig, 
-          responseSchema: payload.generationConfig.responseSchema 
+          contents: payload.contents, 
+          generationConfig: payload.generationConfig 
         })
       });
 
@@ -296,17 +289,16 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt, 
-          generationConfig: payload.generationConfig, 
-          responseSchema: payload.generationConfig.responseSchema 
+          contents: payload.contents, 
+          generationConfig: payload.generationConfig 
         })
       });
 
@@ -391,17 +383,16 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
+    const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt, 
-          generationConfig: payload.generationConfig, 
-          responseSchema: payload.generationConfig.responseSchema 
+          contents: payload.contents, 
+          generationConfig: payload.generationConfig 
         })
       });
 
@@ -491,17 +482,16 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt, 
-          generationConfig: payload.generationConfig, 
-          responseSchema: payload.generationConfig.responseSchema 
+          contents: payload.contents, 
+          generationConfig: payload.generationConfig 
         })
       });
 
@@ -577,17 +567,16 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ-XMI"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt, 
-          generationConfig: payload.generationConfig, 
-          responseSchema: payload.generationConfig.responseSchema 
+          contents: payload.contents, 
+          generationConfig: payload.generationConfig 
         })
       });
 
