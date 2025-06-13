@@ -1,9 +1,10 @@
 // netlify/functions/gemini-proxy.js
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = require('node-fetch'); 
+const fetch = require('node-fetch'); // Required for older Node.js versions, safe to keep.
 
 exports.handler = async (event, context) => {
+    // Ensure only POST requests are processed
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -13,6 +14,8 @@ exports.handler = async (event, context) => {
 
     let requestBody;
     try {
+        // Safely parse the JSON payload sent from the client (App.js)
+        // This requestBody will contain 'contents' and 'generationConfig' as top-level keys
         requestBody = JSON.parse(event.body);
     } catch (e) {
         return {
@@ -22,9 +25,9 @@ exports.handler = async (event, context) => {
     }
 
     // Extract the 'contents' array and 'generationConfig' object from the request body.
-    // These are what App.js sends to the proxy.
     const { contents, generationConfig } = requestBody; 
 
+    // Retrieve your actual Gemini API key from Netlify's secure environment variables.
     const API_KEY = process.env.GEMINI_API_KEY; 
     if (!API_KEY) {
         return {
@@ -33,20 +36,33 @@ exports.handler = async (event, context) => {
         };
     }
 
+    // Initialize the Gemini API client
     const genAI = new GoogleGenerativeAI(API_KEY);
 
-    // CRITICAL FIX PART 1: Configure the model ONCE with generationConfig here.
-    // The generationConfig object itself is passed as a property.
+    // Get the generative model. The model configuration should ideally be defined here.
+    // We will *not* pass generationConfig to getGenerativeModel, as it's already structured for generateContent.
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash", 
-        generationConfig: generationConfig, // Pass the entire generationConfig object received from client
+        model: "gemini-2.0-flash", // Using gemini-2.0-flash as specified in previous steps
     });
 
     try {
-        // *** CRITICAL FIX PART 2: Call generateContent ONLY with 'contents' array ***
-        // The model already knows its generationConfig from the getGenerativeModel call above.
-        const result = await model.generateContent(contents); 
+        // *** CRITICAL FIX HERE: Explicitly construct the arguments for model.generateContent ***
+        // This ensures the payload exactly matches the expected structure.
+        const generateContentArgs = {
+            contents: contents, // This is the array of { role: "user", parts: [...] }
+        };
 
+        // Add generationConfig only if it exists and is structured correctly
+        if (generationConfig && typeof generationConfig === 'object') {
+            generateContentArgs.generationConfig = {
+                responseMimeType: generationConfig.responseMimeType,
+                responseSchema: generationConfig.responseSchema,
+                // Add any other generationConfig properties (like temperature, topP, topK) here if needed
+                // For now, we only include what's strictly in our schema's generationConfig
+            };
+        }
+
+        const result = await model.generateContent(generateContentArgs); 
         const responseText = result.response.text(); 
 
         return {
@@ -56,13 +72,15 @@ exports.handler = async (event, context) => {
         };
     } catch (e) {
         console.error('Error calling Gemini API from Netlify Function:', e.message);
-        if (e.response && e.response.status && e.response.statusText) {
-            console.error(`Gemini API Response Error: ${e.response.status} ${e.response.statusText} - ${e.response.headers.get('content-type') === 'application/json' ? JSON.stringify(e.response.data) : await e.response.text()}`);
+        if (e.response && e.response.status) {
+            // Try to get more specific error details from the API response
+            const errorDetails = await e.response.text();
+            console.error(`Gemini API Response Error: ${e.response.status} ${e.response.statusText} - Details: ${errorDetails}`);
             return {
                 statusCode: e.response.status,
                 body: JSON.stringify({ 
                     error: `Gemini API Error: ${e.response.statusText}`, 
-                    details: e.message 
+                    details: errorDetails 
                 }),
             };
         }
