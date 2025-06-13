@@ -1,8 +1,7 @@
 // netlify/functions/gemini-proxy.js
 
-// These modules are expected to be in your project's package.json dependencies
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = require('node-fetch'); // Required for older Node.js versions, safe to keep.
+const fetch = require('node-fetch'); 
 
 exports.handler = async (event, context) => {
     // Ensure only POST requests are processed
@@ -16,6 +15,7 @@ exports.handler = async (event, context) => {
     let requestBody;
     try {
         // Safely parse the JSON payload sent from the client (App.js)
+        // This requestBody contains 'contents' and 'generationConfig' as top-level keys
         requestBody = JSON.parse(event.body);
     } catch (e) {
         return {
@@ -24,11 +24,10 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Extract the 'contents' array and 'generationConfig' object from the request body.
-    // These are the top-level keys that App.js should be sending.
+    // Destructure the parts we need from the requestBody for the Gemini API call
     const { contents, generationConfig } = requestBody; 
 
-    // Retrieve your actual Gemini API key from Netlify's secure environment variables.
+    // Retrieve your actual Gemini API key securely from Netlify's environment variables.
     const API_KEY = process.env.GEMINI_API_KEY; 
     if (!API_KEY) {
         return {
@@ -42,16 +41,21 @@ exports.handler = async (event, context) => {
 
     // Get the generative model with the configuration passed from the client
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash", // Ensure this matches the model used in your App.js
-        generationConfig: generationConfig, // Pass the full generationConfig object
+        model: "gemini-2.0-flash", 
+        // Pass the entire generationConfig object as is
+        generationConfig: generationConfig, 
     });
 
     try {
-        // Make the actual call to the Gemini API using the extracted 'contents'
-        const result = await model.generateContent(contents); 
-        const responseText = result.response.text(); // Get the raw text response from Gemini
+        // *** CRITICAL FIX HERE: Pass contents and generationConfig as properties of a single object ***
+        // The generateContent method expects a single GenerateContentRequest object.
+        const result = await model.generateContent({ 
+            contents: contents, 
+            generationConfig: generationConfig 
+        }); 
 
-        // Return Gemini's response back to the client (App.js)
+        const responseText = result.response.text(); 
+
         return {
             statusCode: 200,
             headers: { 'Content-Type': 'application/json' }, 
@@ -59,6 +63,17 @@ exports.handler = async (event, context) => {
         };
     } catch (e) {
         console.error('Error calling Gemini API from Netlify Function:', e.message);
+        // Also check if 'e.response' exists for more detailed API errors
+        if (e.response && e.response.status && e.response.statusText) {
+            console.error(`Gemini API Response Error: ${e.response.status} ${e.response.statusText}`);
+            return {
+                statusCode: e.response.status,
+                body: JSON.stringify({ 
+                    error: `Gemini API Error: ${e.response.statusText}`, 
+                    details: e.message 
+                }),
+            };
+        }
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Failed to get response from Gemini API via function.', details: e.message }),
