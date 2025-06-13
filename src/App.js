@@ -203,7 +203,7 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiKey = ""; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
     const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
@@ -289,7 +289,7 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiKey = ""; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
     const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
@@ -383,7 +383,7 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
+    const apiKey = ""; // Canvas will automatically provide this at runtime in Canvas environment. For local testing, replace with your actual API key.
     const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
@@ -482,7 +482,7 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiKey = ""; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
     const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
@@ -567,7 +567,7 @@ function App() {
       }
     };
 
-    const apiKey = "AIzaSyDuKTKkdKGOWjy41yrHVWzl9XpfEHJ"; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
+    const apiKey = ""; // PASTE YOUR API KEY HERE FOR LOCAL TESTING
     const apiUrl = `/.netlify/functions/gemini-proxy`; 
 
     try {
