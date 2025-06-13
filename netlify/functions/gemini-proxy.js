@@ -39,14 +39,17 @@ exports.handler = async (event, context) => {
     const genAI = new GoogleGenerativeAI(API_KEY);
 
     // Get the generative model. Do NOT pass generationConfig here, as it's passed directly to generateContent.
+    // This is the model configuration for the *client library*, not the API payload.
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash", // Ensure this matches the model used in your App.js
     });
 
     try {
-        // *** CRITICAL FIX: Build the payload for generateContent with explicit structure ***
+        // *** CRITICAL FIX: Build the payload for model.generateContent with explicit structure ***
+        // This ensures each property is assigned directly from the parsed requestBody
+        // and sent in the exact format the Gemini API expects.
         const apiCallPayload = {
-            contents: contents, // This should be the array of { role: "user", parts: [...] }
+            contents: contents, // This is the array of { role: "user", parts: [...] }
         };
 
         // Explicitly reconstruct generationConfig with its expected fields
@@ -58,8 +61,9 @@ exports.handler = async (event, context) => {
             if (generationConfig.responseSchema) {
                 apiCallPayload.generationConfig.responseSchema = generationConfig.responseSchema;
             }
-            // Add any other generationConfig properties you might use (e.g., temperature, topP, topK)
-            // Example: if (generationConfig.temperature) apiCallPayload.generationConfig.temperature = generationConfig.temperature;
+            // If you add other generationConfig properties in App.js (like temperature, topP, topK),
+            // you would need to add them here too:
+            // e.g., if (generationConfig.temperature) apiCallPayload.generationConfig.temperature = generationConfig.temperature;
         }
 
         // Call generateContent with the precisely constructed payload
