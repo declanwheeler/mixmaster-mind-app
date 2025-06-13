@@ -38,27 +38,32 @@ exports.handler = async (event, context) => {
 
     const genAI = new GoogleGenerativeAI(API_KEY);
 
-    // Reconstruct generationConfig for model initialization, explicitly pulling out expected fields
-    const modelGenerationConfig = {};
-    if (generationConfig) {
-        if (generationConfig.responseMimeType) {
-            modelGenerationConfig.responseMimeType = generationConfig.responseMimeType;
-        }
-        if (generationConfig.responseSchema) {
-            modelGenerationConfig.responseSchema = generationConfig.responseSchema;
-        }
-        // Add any other generationConfig properties (like temperature, topP, topK) here if they exist
-        // e.g., if (generationConfig.temperature) modelGenerationConfig.temperature = generationConfig.temperature;
-    }
-
+    // Get the generative model. Do NOT pass generationConfig here, as it's passed directly to generateContent.
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash", // Ensure this matches the model used in your App.js
-        generationConfig: modelGenerationConfig, // Pass the explicitly constructed generationConfig
     });
 
     try {
-        // Pass only the contents array. The model instance already has its generationConfig.
-        const result = await model.generateContent({ contents: contents }); 
+        // *** CRITICAL FIX: Build the payload for generateContent with explicit structure ***
+        const apiCallPayload = {
+            contents: contents, // This should be the array of { role: "user", parts: [...] }
+        };
+
+        // Explicitly reconstruct generationConfig with its expected fields
+        if (generationConfig) {
+            apiCallPayload.generationConfig = {};
+            if (generationConfig.responseMimeType) {
+                apiCallPayload.generationConfig.responseMimeType = generationConfig.responseMimeType;
+            }
+            if (generationConfig.responseSchema) {
+                apiCallPayload.generationConfig.responseSchema = generationConfig.responseSchema;
+            }
+            // Add any other generationConfig properties you might use (e.g., temperature, topP, topK)
+            // Example: if (generationConfig.temperature) apiCallPayload.generationConfig.temperature = generationConfig.temperature;
+        }
+
+        // Call generateContent with the precisely constructed payload
+        const result = await model.generateContent(apiCallPayload); 
         const responseText = result.response.text(); 
 
         return {
